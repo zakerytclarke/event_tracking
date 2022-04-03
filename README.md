@@ -21,4 +21,3 @@ This starts the sdk in your application and
 
 ## Further Development
 - HTML versioning for site changes
-- 
