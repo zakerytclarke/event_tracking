@@ -1,0 +1,139 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Task {
+  @@map("Tasks")
+  id        Int        @id @default(autoincrement())
+  name      String
+  description String?
+  feedback  Feedback[]
+  steps     StepsOnTasks[]
+  groupAssignments   GroupTaskAssignment[]
+  userAssignments    UserTaskAssignment[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model Step {
+  @@map("Steps")
+  id      Int    @id @default(autoincrement())
+  name    String
+  description String?
+  tasks   StepsOnTasks[]
+  feedback Feedback[]
+  userAssignments UserTaskAssignment[] 
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model StepsOnTasks {
+  task       Task     @relation(fields: [taskId], references: [id])
+  taskId     Int
+  step   Step @relation(fields: [stepId], references: [id])
+  stepId Int
+  order Int
+
+  @@id([taskId, stepId])
+}
+
+enum FeedbackType {
+  STEP
+  TASK
+}
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  type      FeedbackType
+  details   String
+  step      Step?    @relation(fields: [stepId], references: [id])
+  stepId    Int?
+  task      Task?    @relation(fields: [taskId], references: [id])
+  taskId    Int?
+  author    TestUser @relation(fields: [authorId], references: [id])
+  authorId  Int
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model TestUser {
+  @@map("TestUsers")
+  id             Int         @id @default(autoincrement())
+  display        String
+  integrationId  Int
+  feedback       Feedback[]
+  groups         TestGroup[]
+  assignments    UserTaskAssignment[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model TestGroup {
+  @@map("TestGroups")
+  id          Int         @id @default(autoincrement())
+  name        String
+  testUsers   TestUser[]
+  assignments GroupTaskAssignment[]
+}
+
+model GroupTaskAssignment {
+  @@map("GroupTaskAssignments")
+  id         Int         @id @default(autoincrement())
+  task       Task @relation(fields: [taskId], references: [id])
+  taskId     Int
+  group      TestGroup @relation(fields: [groupId], references: [id])
+  groupId    Int
+}
+
+enum UserAssignmentStatus {
+  COMPLETED
+  STARTED
+  NOT_STARTED
+}
+
+model UserTaskAssignment {
+  @@map("UserTaskAssignments")
+  id         Int         @id @default(autoincrement())
+  task       Task @relation(fields: [taskId], references: [id])
+  taskId     Int
+  testUser   TestUser @relation(fields: [testUserId], references: [id])
+  testUserId Int
+  status     UserAssignmentStatus
+  currentStep Step @relation(fields: [currentStepId], references: [id])
+  currentStepId Int
+}
+
+model User {
+  @@map("Users")
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
+  password String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model Event {
+  @@map("Events")
+  id Int @id @default(autoincrement())
+  session_id String
+  metadata Json
+  utc Int          
+  element_hash String
+  url String
+}
+
+model Session {
+  @@map("Sessions")
+  session_id String @unique
+  start_utc Int
+  end_utc Int
+  video_url String?
+}
